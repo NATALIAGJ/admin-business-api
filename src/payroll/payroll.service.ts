@@ -10,6 +10,7 @@ import { Employee } from '../employees/entities/employee.entity';
 import { Company } from '../company/entities/company.entity';
 import { CreateWorkLogDto } from './dto/create-work-log.dto';
 import { UpdateWorkLogDto } from './dto/update-work-log.dto';
+import { EntityStatus } from '../common/enums/entity-status.enum';
 
 @Injectable()
 export class PayrollService {
@@ -99,9 +100,15 @@ export class PayrollService {
   }
 
   async remove(companyId: string, id: string) {
-    const workLog = await this.findOne(companyId, id);
-    await this.workLogsRepository.remove(workLog);
-    return { deleted: true };
+    const workLog = await this.workLogsRepository.findOne({
+      where: { id, company: { id: companyId } },
+    });
+    if (!workLog) {
+      throw new NotFoundException('Work log not found');
+    }
+    workLog.status = EntityStatus.INACTIVE;
+    await this.workLogsRepository.save(workLog);
+    return { deleted: true, status: EntityStatus.INACTIVE };
   }
 
   async generatePayroll(

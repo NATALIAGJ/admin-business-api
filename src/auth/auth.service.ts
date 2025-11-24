@@ -46,7 +46,12 @@ export class AuthService {
     });
     await this.usersRepository.save(user);
 
-    return this.buildAuthResponse(user);
+    const userWithCompany = await this.usersRepository.findOne({
+      where: { id: user.id },
+      relations: ['company'],
+    });
+
+    return this.buildAuthResponse(userWithCompany);
   }
 
   async login(dto: LoginDto) {
@@ -87,6 +92,7 @@ export class AuthService {
         email: user.email,
         role: user.role,
         companyId: user.company.id,
+        companyName: user.company.name,
       },
     };
   }

@@ -35,9 +35,5 @@ export class CreateProductDto {
   status?: ProductStatus;
 
   @IsUUID()
-  registeredById: string;
-
-  @IsUUID()
   providerId: string;
 }
-

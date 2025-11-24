@@ -4,6 +4,7 @@ import { Product } from '../../products/entities/product.entity';
 import { Invoice } from '../../billing/entities/invoice.entity';
 import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
 import { UserRole } from '../../common/enums/user-role.enum';
+import { EntityStatus } from '../../common/enums/entity-status.enum';
 
 @Entity({ name: 'users' })
 export class User extends BaseEntity {
@@ -18,6 +19,9 @@ export class User extends BaseEntity {
 
   @Column({ type: 'enum', enum: UserRole, default: UserRole.EMPLOYEE })
   role: UserRole;
+
+  @Column({ type: 'enum', enum: EntityStatus, default: EntityStatus.ACTIVE })
+  status: EntityStatus;
 
   @ManyToOne(() => Company, (company) => company.users, { onDelete: 'CASCADE' })
   company: Company;

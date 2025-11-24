@@ -2,6 +2,7 @@ import { BaseEntity } from '../../common/entities/base.entity';
 import { Company } from '../../company/entities/company.entity';
 import { Product } from '../../products/entities/product.entity';
 import { Expense } from '../../expenses/entities/expense.entity';
+import { EntityStatus } from '../../common/enums/entity-status.enum';
 import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
 
 @Entity({ name: 'providers' })
@@ -15,8 +16,8 @@ export class Provider extends BaseEntity {
   @Column()
   address: string;
 
-  @Column({ default: 'ACTIVE' })
-  status: string;
+  @Column({ type: 'enum', enum: EntityStatus, default: EntityStatus.ACTIVE })
+  status: EntityStatus;
 
   @ManyToOne(() => Company, (company) => company.providers, {
     onDelete: 'CASCADE',

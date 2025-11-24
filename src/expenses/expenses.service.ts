@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Expense } from './entities/expense.entity';
@@ -6,6 +10,7 @@ import { Provider } from '../providers/entities/provider.entity';
 import { Company } from '../company/entities/company.entity';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { UpdateExpenseDto } from './dto/update-expense.dto';
+import { EntityStatus } from '../common/enums/entity-status.enum';
 
 @Injectable()
 export class ExpensesService {
@@ -84,9 +89,14 @@ export class ExpensesService {
   }
 
   async remove(companyId: string, id: string) {
-    const expense = await this.findOne(companyId, id);
-    await this.expensesRepository.remove(expense);
-    return { deleted: true };
+    const expense = await this.expensesRepository.findOne({
+      where: { id, company: { id: companyId } },
+    });
+    if (!expense) {
+      throw new NotFoundException('Expense not found');
+    }
+    expense.status = EntityStatus.INACTIVE;
+    await this.expensesRepository.save(expense);
+    return { deleted: true, status: EntityStatus.INACTIVE };
   }
 }
-

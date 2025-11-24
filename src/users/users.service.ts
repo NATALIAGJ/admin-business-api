@@ -10,6 +10,7 @@ import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Company } from '../company/entities/company.entity';
+import { EntityStatus } from '../common/enums/entity-status.enum';
 
 @Injectable()
 export class UsersService {
@@ -47,14 +48,14 @@ export class UsersService {
 
   async findAll(companyId: string) {
     const users = await this.usersRepository.find({
-      where: { company: { id: companyId } },
+      where: { company: { id: companyId }, status: EntityStatus.ACTIVE },
     });
     return users.map((user) => this.sanitize(user));
   }
 
   async findOne(companyId: string, id: string) {
     const user = await this.usersRepository.findOne({
-      where: { id, company: { id: companyId } },
+      where: { id, company: { id: companyId }, status: EntityStatus.ACTIVE },
     });
     if (!user) {
       throw new NotFoundException('User not found');
@@ -85,13 +86,14 @@ export class UsersService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    await this.usersRepository.remove(user);
-    return { deleted: true };
+    user.status = EntityStatus.INACTIVE;
+    await this.usersRepository.save(user);
+    return { deleted: true, status: EntityStatus.INACTIVE };
   }
 
   async findByEmail(email: string) {
     return this.usersRepository.findOne({
-      where: { email },
+      where: { email, status: EntityStatus.ACTIVE },
       relations: ['company'],
     });
   }

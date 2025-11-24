@@ -5,6 +5,7 @@ import { Provider } from './entities/provider.entity';
 import { Company } from '../company/entities/company.entity';
 import { CreateProviderDto } from './dto/create-provider.dto';
 import { UpdateProviderDto } from './dto/update-provider.dto';
+import { EntityStatus } from '../common/enums/entity-status.enum';
 
 @Injectable()
 export class ProvidersService {
@@ -53,9 +54,14 @@ export class ProvidersService {
   }
 
   async remove(companyId: string, id: string) {
-    const provider = await this.findOne(companyId, id);
-    await this.providersRepository.remove(provider);
-    return { deleted: true };
+    const provider = await this.providersRepository.findOne({
+      where: { id, company: { id: companyId } },
+    });
+    if (!provider) {
+      throw new NotFoundException('Provider not found');
+    }
+    provider.status = EntityStatus.INACTIVE;
+    await this.providersRepository.save(provider);
+    return { deleted: true, status: EntityStatus.INACTIVE };
   }
 }
-

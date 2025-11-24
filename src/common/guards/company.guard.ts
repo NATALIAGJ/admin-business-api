@@ -10,8 +10,7 @@ import { Request } from 'express';
 export class CompanyGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<Request>();
-    const user = (request as Request & { user?: { companyId?: string } })
-      .user;
+    const user = (request as Request & { user?: { companyId?: string } }).user;
 
     if (!user?.companyId) {
       throw new UnauthorizedException('Company context missing in token');
@@ -21,4 +20,3 @@ export class CompanyGuard implements CanActivate {
     return true;
   }
 }
-

@@ -11,6 +11,7 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { Provider } from '../providers/entities/provider.entity';
 import { Company } from '../company/entities/company.entity';
 import { User } from '../users/entities/user.entity';
+import { ProductStatus } from '../common/enums/product-status.enum';
 
 @Injectable()
 export class ProductsService {
@@ -25,15 +26,21 @@ export class ProductsService {
     private readonly usersRepository: Repository<User>,
   ) {}
 
-  async create(companyId: string, dto: CreateProductDto) {
+  async create(
+    companyId: string,
+    dto: CreateProductDto,
+    registeredById: string,
+  ) {
+    const { providerId, ...data } = dto;
+
     const [company, provider, registeredBy] = await Promise.all([
       this.companyRepository.findOne({ where: { id: companyId } }),
       this.providersRepository.findOne({
-        where: { id: dto.providerId },
+        where: { id: providerId },
         relations: ['company'],
       }),
       this.usersRepository.findOne({
-        where: { id: dto.registeredById },
+        where: { id: registeredById },
         relations: ['company'],
       }),
     ]);
@@ -41,6 +48,7 @@ export class ProductsService {
     if (!company) {
       throw new NotFoundException('Company not found');
     }
+
     if (!provider || provider.company.id !== companyId) {
       throw new UnauthorizedException('Invalid provider for company');
     }
@@ -48,15 +56,12 @@ export class ProductsService {
       throw new UnauthorizedException('Invalid user for company');
     }
 
-    const { providerId, registeredById, ...data } = dto;
-
     const product = this.productsRepository.create({
       ...data,
       company,
       provider,
       registeredBy,
     });
-
     return this.productsRepository.save(product);
   }
 
@@ -81,7 +86,7 @@ export class ProductsService {
   async update(companyId: string, id: string, dto: UpdateProductDto) {
     const product = await this.findOne(companyId, id);
 
-    const { providerId, registeredById, ...rest } = dto;
+    const { providerId, ...rest } = dto;
 
     if (providerId && providerId !== product.provider.id) {
       const provider = await this.providersRepository.findOne({
@@ -94,25 +99,14 @@ export class ProductsService {
       product.provider = provider;
     }
 
-    if (registeredById && registeredById !== product.registeredBy.id) {
-      const registeredBy = await this.usersRepository.findOne({
-        where: { id: registeredById },
-        relations: ['company'],
-      });
-      if (!registeredBy || registeredBy.company.id !== companyId) {
-        throw new UnauthorizedException('Invalid user for company');
-      }
-      product.registeredBy = registeredBy;
-    }
-
     Object.assign(product, rest);
     return this.productsRepository.save(product);
   }
 
   async remove(companyId: string, id: string) {
     const product = await this.findOne(companyId, id);
-    await this.productsRepository.remove(product);
-    return { deleted: true };
+    product.status = ProductStatus.INACTIVE;
+    await this.productsRepository.save(product);
+    return { deleted: true, status: ProductStatus.INACTIVE };
   }
 }
-

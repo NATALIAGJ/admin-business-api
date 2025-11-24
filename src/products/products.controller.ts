@@ -15,6 +15,8 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CompanyGuard } from '../common/guards/company.guard';
 import { CurrentCompanyId } from '../common/decorators/company.decorator';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import type { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 
 @Controller('products')
 @UseGuards(JwtAuthGuard, CompanyGuard)
@@ -26,25 +28,23 @@ export class ProductsController {
   @Post()
   create(
     @CurrentCompanyId() companyId: string,
+    @CurrentUser() user: JwtPayload,
     @Body() createProductDto: CreateProductDto,
   ) {
-    this.logger.log(`📝 POST /products - CompanyId: ${companyId}, Product: ${createProductDto.name}`);
-    return this.productsService.create(companyId, createProductDto);
+    this.logger.log(
+      `📝 POST /products - CompanyId: ${companyId}, Product: ${createProductDto.name}`,
+    );
+    return this.productsService.create(companyId, createProductDto, user.sub);
   }
 
   @Get()
   findAll(@CurrentCompanyId() companyId: string) {
-    console.log({ companyId });
-
     this.logger.log(`📋 GET /products - CompanyId: ${companyId}`);
     return this.productsService.findAll(companyId);
   }
 
   @Get(':id')
-  findOne(
-    @CurrentCompanyId() companyId: string,
-    @Param('id') id: string,
-  ) {    
+  findOne(@CurrentCompanyId() companyId: string, @Param('id') id: string) {
     this.logger.log(`🔍 GET /products/${id} - CompanyId: ${companyId}`);
     return this.productsService.findOne(companyId, id);
   }
@@ -60,12 +60,8 @@ export class ProductsController {
   }
 
   @Delete(':id')
-  remove(
-    @CurrentCompanyId() companyId: string,
-    @Param('id') id: string,
-  ) {
+  remove(@CurrentCompanyId() companyId: string, @Param('id') id: string) {
     this.logger.log(`🗑️  DELETE /products/${id} - CompanyId: ${companyId}`);
     return this.productsService.remove(companyId, id);
   }
 }
-

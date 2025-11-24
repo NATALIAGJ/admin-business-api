@@ -5,6 +5,7 @@ import { Employee } from './entities/employee.entity';
 import { Company } from '../company/entities/company.entity';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
+import { EntityStatus } from '../common/enums/entity-status.enum';
 
 @Injectable()
 export class EmployeesService {
@@ -52,9 +53,15 @@ export class EmployeesService {
   }
 
   async remove(companyId: string, id: string) {
-    const employee = await this.findOne(companyId, id);
-    await this.employeesRepository.remove(employee);
-    return { deleted: true };
+    const employee = await this.employeesRepository.findOne({
+      where: { id, company: { id: companyId } },
+    });
+    if (!employee) {
+      throw new NotFoundException('Employee not found');
+    }
+    employee.status = EntityStatus.INACTIVE;
+    await this.employeesRepository.save(employee);
+    return { deleted: true, status: EntityStatus.INACTIVE };
   }
 }
 
